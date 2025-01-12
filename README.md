@@ -9,7 +9,7 @@ This project aims to address the growing need for affordable and effective cyber
 **Key Stages:**
 
 1. **Data Preprocessing and Exploratory Data Analysis (EDA):**
-   - This stage focuses on cleaning, transforming, and understanding the CICIDS2017 dataset.  The Jupyter Notebook `cicids2017-comprehensive-data-processing-for-ml.ipynb` details the steps taken to handle missing values, remove duplicates, perform feature engineering, scale numerical features, and conduct exploratory data analysis to gain insights into the dataset's characteristics. This notebook generates a scaled and preprocessed version of the dataset, optimized for various machine learning algorithms.
+   - This stage focuses on cleaning, transforming, and understanding the CICIDS2017 dataset.  The Jupyter Notebook `cicids2017-comprehensive-data-processing-for-ml.ipynb` details the steps taken to handle missing values, remove duplicates, perform feature engineering, scale numerical features, and conduct exploratory data analysis to gain insights into the dataset's characteristics. This notebook generates a scaled and preprocessed version of the dataset, optimized for various machine learning algorithms. The updated [dataset can be found on Kaggle](https://www.kaggle.com/datasets/ericanacletoribeiro/cicids2017-cleaned-and-preprocessed).
 
 2. **Machine Learning Model Training and Evaluation:**
    -  This stage involves training and comparing the performance of different supervised and unsupervised machine learning models for anomaly detection.  Algorithms being considered include Random Forest, Support Vector Machines (SVM), Isolation Forest, and K-Means.  Evaluation metrics include accuracy, precision, recall, F1-score, ROC AUC, and resource usage (CPU time and memory).
