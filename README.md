@@ -2,11 +2,21 @@
 
 This repository contains the code and documentation for my final MBA project, which focuses on developing a Machine Learning-based Intrusion Detection System (IDS) tailored for resource-constrained networks, typical of small businesses. The project leverages the CICIDS2017 dataset for training and evaluation.
 
-**Project Overview:**
+## **Project Overview:**
 
 This project aims to address the growing need for affordable and effective cybersecurity solutions for small businesses and resource-constrained environments. Traditional intrusion detection systems can be resource-intensive and expensive, making them unsuitable for these settings. This research explores the application of machine learning algorithms to detect network intrusions in such environments, focusing on anomaly-based detection to identify both known and unknown threats.
 
-**Key Stages:**
+**Key Features:**
+
+- **Resource-Constrained Focus:** Designed for low-power devices like the Raspberry Pi, making it suitable for small businesses and home networks.
+- **Anomaly-Based Detection:** Detects both known and unknown threats by identifying deviations from normal network behavior.
+- **XGBoost Algorithm:** Leverages the efficient and high-performing XGBoost algorithm for anomaly detection.
+- **Real-time Traffic Analysis:** Analyzes network traffic in real-time using `scapy`.
+- **User Interface:** Provides a graphical user interface for monitoring and managing alerts.
+- **Simulated Test Environment:** Uses Atomic Red Team for realistic attack simulations.
+- **Structured Logging and Reporting:** Logs alerts in JSON format and includes a reporting mechanism to generate performance statistics.
+
+## **Stages:**
 
 1. **Data Preprocessing and Exploratory Data Analysis (EDA):**
 
@@ -30,16 +40,6 @@ This project aims to address the growing need for affordable and effective cyber
    - The `NetworkAnomalyDetector` class handles feature extraction, anomaly detection, and alert generation. The `NetworkAnomalyGUI` provides a user interface for monitoring and controlling the NIDS. The prototype is designed for deployment on a resource-constrained device.
 
    The prototype is being tested on a Raspberry Pi 5 in a simulated network environment using the Atomic Red Team framework for attack simulations (e.g. DoS, portscan, botnet activity). Results will be available soon.
-
-**Key Features:**
-
-- **Resource-Constrained Focus:** Designed for low-power devices like the Raspberry Pi, making it suitable for small businesses and home networks.
-- **Anomaly-Based Detection:** Detects both known and unknown threats by identifying deviations from normal network behavior.
-- **XGBoost Algorithm:** Leverages the efficient and high-performing XGBoost algorithm for anomaly detection.
-- **Real-time Traffic Analysis:** Analyzes network traffic in real-time using `scapy`.
-- **User Interface:** Provides a graphical user interface for monitoring and managing alerts.
-- **Simulated Test Environment:** Uses Atomic Red Team for realistic attack simulations.
-- **Structured Logging and Reporting:** Logs alerts in JSON format and includes a reporting mechanism to generate performance statistics.
 
 ## Getting Started
 
