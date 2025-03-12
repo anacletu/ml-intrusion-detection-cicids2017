@@ -8,16 +8,26 @@ import threading
 import datetime
 import json
 import os
+import netifaces
 
 from collections import defaultdict, deque
 from tkinter import scrolledtext
 from scapy.all import sniff, IP, TCP, UDP
 
+# Get the default gateway  
+gateways = netifaces.gateways()  
+default_gateway = gateways.get('default', {})
+
+# Get the default interface
+try:
+    INTERFACE = default_gateway[netifaces.AF_INET][1]
+except:
+    raise Exception("Could not determine the default interface. Please specify the interface manually.")
+
 # Constants
 TIME_WINDOW = 120
 ACTIVITY_TIMEOUT = 2.0
 CLEANUP_INTERVAL = 60
-INTERFACE = 'lo0' # Adjust according to your network interface
 MODEL_PATH = 'xgboost.joblib'
 
 class NetworkAnomalyDetector:
