@@ -434,30 +434,35 @@ class NetworkAnomalyDetector:
         
         # Select only the features needed by the model in the right order
         df = df[required_features]
+
+        # Define class names for readability
+        class_names = ['Bots', 'Brute Force', 'DDoS', 'DoS', 'Normal Traffic' 'Port Scanning', 'Web Attacks']
         
         # Make prediction
         try:
             # Predict anomaly
-            prediction = self.model.predict_proba(df)
-            if len(prediction[0]) > 1:  # Binary classification (normal vs anomaly)
-                anomaly_score = prediction[0][1]  # Probability of being anomalous
-            else:
-                anomaly_score = prediction[0][0]
+            probabilities = self.model.predict_proba(df)
             
-            # Check if the prediction exceeds the threshold
-            if anomaly_score >= self.threshold:
+            # Get the predicted class index (highest probability)
+            predicted_class_idx = np.argmax(probabilities[0])
+            predicted_class = class_names[predicted_class_idx]
+            confidence_score = probabilities[0][predicted_class_idx]
+            
+            # Check if the prediction is anything other than Normal Traffic
+            if predicted_class != 'Normal Traffic':
                 ip_src, port_src = flow_key.split('-')[0].split(':')
                 ip_dst, port_dst = flow_key.split('-')[1].split(':')
                 protocol = flow_key.split('-')[2] if len(flow_key.split('-')) > 2 else "Unknown"
                 
                 alert = {
                     'flow': flow_key,
-                    'score': anomaly_score,
-                    'timestamp': datetime.datetime.now().isoformat(), # ISO 8601 format
+                    'attack_type': predicted_class,
+                    'confidence': confidence_score,
+                    'timestamp': datetime.datetime.now().isoformat(),  # ISO 8601 format
                     'src': f"{ip_src}:{port_src}",
                     'dst': f"{ip_dst}:{port_dst}",
                     'protocol': protocol,
-                    'details': f"Anomaly detected in flow {ip_src}:{port_src} -> {ip_dst}:{port_dst} [{protocol}] with score {anomaly_score:.4f}"
+                    'details': f"{predicted_class} detected in flow {ip_src}:{port_src} -> {ip_dst}:{port_dst} [{protocol}] with confidence {confidence_score:.4f}"
                 }
                 self.alerts.append(alert)
                 
@@ -529,7 +534,15 @@ class NetworkAnomalyDetector:
         self.capture_running = True
         def capture_thread():
             try:
-                sniff(iface=interface, filter=filter, prn=self.process_packet, store=0, timeout=1, stop_filter=lambda x: not self.capture_running)
+                while self.capture_running:
+                    sniff(
+                        iface=interface,
+                        filter=filter,
+                        prn=self.process_packet,
+                        store=0,
+                        timeout=1,  # Sniff in short increments
+                        stop_filter=lambda x: not self.capture_running
+                    )
             except Exception as e:
                 print(f"Capture error: {e}")
             finally:
