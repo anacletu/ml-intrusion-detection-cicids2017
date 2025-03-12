@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import tkinter as tk
 
-import pickle
+import joblib
 import time
 import threading
 import datetime
@@ -14,27 +14,27 @@ from collections import defaultdict, deque
 from tkinter import scrolledtext
 from scapy.all import sniff, IP, TCP, UDP
 
-# Get the default gateway  
+# Get the default gateway
 gateways = netifaces.gateways()  
 default_gateway = gateways.get('default', {})
 
-# Get the default interface
+# Constants
 try:
     INTERFACE = default_gateway[netifaces.AF_INET][1]
 except:
     raise Exception("Could not determine the default interface. Please specify the interface manually.")
 
-# Constants
 TIME_WINDOW = 120
 ACTIVITY_TIMEOUT = 2.0
 CLEANUP_INTERVAL = 60
-MODEL_PATH = 'xgboost.joblib'
+MODEL_PATH = '../ml_models/xgboost.joblib'
 
 class NetworkAnomalyDetector:
     def __init__(self, model_path, threshold=0.7):
         # Load the pre-trained XGBoost model
         with open(model_path, 'rb') as f:
-            self.model = pickle.load(f)
+            self.model = joblib.load(f)
+        self.capture_running = False
         
         # Detection threshold
         self.threshold = threshold
@@ -526,9 +526,10 @@ class NetworkAnomalyDetector:
     
     def start_capture(self, interface=None, filter=None):
         """Start packet capture in a separate thread"""
+        self.capture_running = True
         def capture_thread():
             try:
-                sniff(iface=interface, filter=filter, prn=self.process_packet, store=0, timeout=1, stop_filter=lambda x: not self.capture_running) # Stop after 1 second if not self.capture_running
+                sniff(iface=interface, filter=filter, prn=self.process_packet, store=0, timeout=1, stop_filter=lambda x: not self.capture_running)
             except Exception as e:
                 print(f"Capture error: {e}")
             finally:
