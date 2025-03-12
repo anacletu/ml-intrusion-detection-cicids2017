@@ -1,15 +1,52 @@
-# Ignore Python cache
-__pycache__/
-*.py[cod]
+# Ignore Python cache  
+__pycache__/  
+*.py[cod]  
 
-# Ignore virtual environments
-env/
-venv/
-.venv/
+# Ignore virtual environments  
+env/  
+venv/  
+.venv/  
 
-# Ignore logs
-*.log
+# Ignore logs  
+*.log  
+logs/  
 
-# Ignore system files
-.DS_Store
-Thumbs.db
+# Ignore system files  
+.DS_Store  
+Thumbs.db  
+Desktop.ini
+ehthumbs.db
+.Trash-*
+.nfs*
+
+# Ignore IDE/editor specific files  
+.vscode/  
+.idea/  
+*.swp  
+*.swo  
+
+# Ignore local settings and secrets  
+*.env  
+*.local  
+secrets.py  
+settings.py  
+
+# Ignore build and distribution files  
+build/  
+dist/  
+*.egg-info/  
+*.whl  
+*.tar.gz  
+
+# Ignore pytest cache  
+.pytest_cache/  
+
+# Ignore Jupyter notebook checkpoints  
+.ipynb_checkpoints/  
+
+# Ignore coverage reports  
+.coverage  
+htmlcov/  
+
+# Ignore mypy cache  
+.mypy_cache/  
