@@ -435,8 +435,8 @@ class NetworkAnomalyDetector:
         # Select only the features needed by the model in the right order
         df = df[required_features]
 
-        # Define class names for readability
-        class_names = ['Bots', 'Brute Force', 'DDoS', 'DoS', 'Normal Traffic' 'Port Scanning', 'Web Attacks']
+        # Define class names for readability (according to the what was defined during training)
+        class_names = ['Normal Traffic', 'DoS', 'DDoS', 'Port Scanning', 'Brute Force', 'Web Attacks', 'Bots']
         
         # Make prediction
         try:
