@@ -8,6 +8,7 @@ import threading
 import datetime
 import json
 import os
+import csv
 import netifaces
 
 from collections import defaultdict, deque
@@ -650,20 +651,64 @@ class NetworkAnomalyGUI:
     
     def add_alert(self, alert):
         """Add an alert to the log and write to a JSON file."""
-        alert_text = f"[{alert['timestamp']}] {alert['details']}\n"
+        # Format timestamp for display
+        timestamp = alert.get('timestamp', datetime.datetime.now().isoformat())
+        
+        # Get the Atomic Red Team test ID if available
+        test_id = os.environ.get("ATOMIC_RED_TEAM_TEST", "unknown")
+        
+        # Add additional context to the alert
+        alert["test_id"] = test_id
+        alert["detection_time"] = datetime.datetime.now().isoformat()
+        
+        # Calculate detection latency if we have attack start time in env var
+        attack_start_time = os.environ.get("ATTACK_START_TIME")
+        if attack_start_time:
+            try:
+                start = datetime.datetime.fromisoformat(attack_start_time)
+                now = datetime.datetime.now()
+                alert["detection_latency_seconds"] = (now - start).total_seconds()
+            except (ValueError, TypeError):
+                alert["detection_latency_seconds"] = None
+        
+        # Format alert for display
+        alert_text = f"[{timestamp}] {alert['details']} [Test: {test_id}]\n"
         self.alert_log.insert(tk.END, alert_text)
         self.alert_log.see(tk.END)
-        alert["test_id"] = os.environ.get("ATOMIC_RED_TEAM_TEST")  # Get test ID from environment variable
         
         # Update alert count
         self.alerts_var.set(str(len(self.detector.alerts)))
 
+        # Ensure the alerts directory exists
+        os.makedirs("nids_alerts", exist_ok=True)
+        
+        # Use a daily log file for better organization
+        log_date = datetime.datetime.now().strftime("%Y-%m-%d")
+        log_file = os.path.join("nids_alerts", f"nids_alerts_{log_date}.jsonl")
+        
         try:
-            with open("nids_alerts.json", "a") as f:  # "a" for append mode
+            with open(log_file, "a") as f:  # "a" for append mode
                 json.dump(alert, f)
-                f.write("\n") # Add newline for readability
+                f.write("\n")  # Add newline for JSONL format
         except Exception as e:
-            print(f"Error writing alert to JSON: {e}")
+            print(f"Error writing alert to JSON file: {e}")
+            
+        # Also log to a consolidated CSV for easier analysis
+        try:
+            csv_file = os.path.join("nids_alerts", "nids_alerts.csv")
+            csv_exists = os.path.exists(csv_file)
+            
+            with open(csv_file, "a", newline='') as csvfile:
+                fieldnames = ["timestamp", "attack_type", "confidence", "src", "dst", 
+                            "protocol", "test_id", "detection_latency_seconds"]
+                writer = csv.DictWriter(csvfile, fieldnames=fieldnames, extrasaction='ignore')
+                
+                if not csv_exists:
+                    writer.writeheader()
+                
+                writer.writerow({k: alert.get(k) for k in fieldnames})
+        except Exception as e:
+            print(f"Error writing to CSV file: {e}")
     
     def add_log_message(self, message):
         """Add a regular log message to the alert log"""
