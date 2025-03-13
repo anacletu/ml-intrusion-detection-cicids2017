@@ -11,6 +11,9 @@ venv/
 *.log  
 logs/  
 
+# Ignore test results
+nids_test_results/
+
 # Ignore system files  
 .DS_Store  
 Thumbs.db  
