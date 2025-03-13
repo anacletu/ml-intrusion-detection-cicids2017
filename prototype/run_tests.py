@@ -140,8 +140,6 @@ class AtomicRedTeamTester:
     
     def _get_technique_name(self, technique_id):
         """Get a more readable name for the technique ID"""
-        # This is a simplified mapping - in a real implementation you might 
-        # want to fetch this from the MITRE ATT&CK database or Atomic Red Team repo
         technique_names = {
             "T1059.001": "PowerShell",
             "T1059.003": "Windows Command Shell",
