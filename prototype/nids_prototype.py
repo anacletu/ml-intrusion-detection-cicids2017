@@ -25,14 +25,15 @@ try:
 except:
     raise Exception("Could not determine the default interface. Please specify the interface manually.")
 
-TIME_WINDOW = 1
+TIME_WINDOW = 30
 ACTIVITY_TIMEOUT = 2.0
 CLEANUP_INTERVAL = 60
 MODEL_PATH = '../ml_models/xgboost.joblib'
 
 # Flow keys to whitelist (e.g., DHCP)
 WHITELISTED_FLOWS = {
-    "0.0.0.0:68-255.255.255.255:67-UDP",  # DHCP
+    "0.0.0.0:68-255.255.255.255:67-UDP",  # DHCP client to server
+    "192.168.0.1:67-255.255.255.255:68-UDP",  # DHCP server to client
     # Add more as needed
 }
 
@@ -456,8 +457,8 @@ class NetworkAnomalyDetector:
             predicted_class = class_names[predicted_class_idx]
             confidence_score = probabilities[0][predicted_class_idx]
             
-            # Check if the prediction is anything other than Normal Traffic
-            if predicted_class != 'Normal Traffic':
+            # Check if the prediction is anything other than Normal Traffic and above the threshold
+            if predicted_class != 'Normal Traffic' and confidence_score >= self.threshold:
                 ip_src, port_src = flow_key.split('-')[0].split(':')
                 ip_dst, port_dst = flow_key.split('-')[1].split(':')
                 protocol = flow_key.split('-')[2] if len(flow_key.split('-')) > 2 else "Unknown"

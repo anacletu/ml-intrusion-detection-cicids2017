@@ -35,7 +35,7 @@ class SimpleAttackTester:
         # Set environment variables for correlation
         os.environ["ATTACK_TYPE"] = attack_type
         os.environ["ATTACK_START_TIME"] = datetime.datetime.now().isoformat()
-        os.environ["ATOMIC_RED_TEAM_TEST"] = test_id  # For compatibility with your NIDS
+        os.environ["ATOMIC_RED_TEAM_TEST"] = test_id
         
         try:
             start_time = datetime.datetime.now()
