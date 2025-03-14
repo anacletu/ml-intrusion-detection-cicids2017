@@ -25,10 +25,16 @@ try:
 except:
     raise Exception("Could not determine the default interface. Please specify the interface manually.")
 
-TIME_WINDOW = 10
+TIME_WINDOW = 1
 ACTIVITY_TIMEOUT = 2.0
 CLEANUP_INTERVAL = 60
 MODEL_PATH = '../ml_models/xgboost.joblib'
+
+# Flow keys to whitelist (e.g., DHCP)
+WHITELISTED_FLOWS = {
+    "0.0.0.0:68-255.255.255.255:67-UDP",  # DHCP
+    # Add more as needed
+}
 
 class NetworkAnomalyDetector:
     def __init__(self, model_path, threshold=0.7):
@@ -414,6 +420,9 @@ class NetworkAnomalyDetector:
     
     def detect_anomalies(self, flow_key):
         """Detect anomalies in a flow using the XGBoost model"""
+        if flow_key in WHITELISTED_FLOWS:
+            return  # Skip whitelist flows
+
         features = self.extract_features(flow_key)
         if features is None:
             return
@@ -520,9 +529,7 @@ class NetworkAnomalyDetector:
         
         for flow_key, flow in self.flow_stats.items():
             if flow['last_packet_time'] is not None and current_time - flow['last_packet_time'] > self.cleanup_interval:
-                # Before removing, check if we should analyze this flow
-                if flow['fwd_packets'] + flow['bwd_packets'] > 3:  # Only analyze flows with sufficient packets
-                    self.detect_anomalies(flow_key)
+                self.detect_anomalies(flow_key)
                 to_remove.append(flow_key)
         
         for flow_key in to_remove:
@@ -670,7 +677,7 @@ class NetworkAnomalyGUI:
                 alert["detection_latency_seconds"] = None
         
         # Format alert for display
-        alert_text = f"[{timestamp}] {alert['details']} [Test: {test_id}]\n"
+        alert_text = f"[{timestamp}] {alert['details']}\n"
         self.alert_log.insert(tk.END, alert_text)
         self.alert_log.see(tk.END)
         
