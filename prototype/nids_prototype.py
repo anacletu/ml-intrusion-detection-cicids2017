@@ -25,7 +25,7 @@ try:
 except:
     raise Exception("Could not determine the default interface. Please specify the interface manually.")
 
-TIME_WINDOW = 120
+TIME_WINDOW = 10
 ACTIVITY_TIMEOUT = 2.0
 CLEANUP_INTERVAL = 60
 MODEL_PATH = '../ml_models/xgboost.joblib'
@@ -118,7 +118,6 @@ class NetworkAnomalyDetector:
             protocol = 'TCP'
             src_port = packet[TCP].sport
             dst_port = packet[TCP].dport
-            flags = packet[TCP].flags
             header_length = len(packet[TCP])
             
             # Extract window size
@@ -131,11 +130,10 @@ class NetworkAnomalyDetector:
             protocol = 'UDP'
             src_port = packet[UDP].sport
             dst_port = packet[UDP].dport
-            flags = 0
             header_length = len(packet[UDP])
             window_size = 0
         else:
-            # Skip non-TCP/UDP packets for simplicity
+            # Skip non-TCP/UDP packets
             return
         
         # Create directional flow keys (src->dst and dst->src)
@@ -174,7 +172,7 @@ class NetworkAnomalyDetector:
             iat = current_time - flow['last_packet_time']
             flow['flow_iat'].append(iat)
             
-            # Check if we need to update active/idle times
+            # Check if it is needed to update active/idle times
             if iat > self.activity_timeout:
                 if flow['active_start'] is not None:
                     active_time = flow['last_packet_time'] - flow['active_start']
@@ -458,7 +456,7 @@ class NetworkAnomalyDetector:
                 alert = {
                     'flow': flow_key,
                     'attack_type': predicted_class,
-                    'confidence': confidence_score,
+                    'confidence': float(confidence_score),
                     'timestamp': datetime.datetime.now().isoformat(),  # ISO 8601 format
                     'src': f"{ip_src}:{port_src}",
                     'dst': f"{ip_dst}:{port_dst}",
@@ -475,7 +473,7 @@ class NetworkAnomalyDetector:
             print(f"Error in anomaly detection: {e}")
         
         # Reset flow statistics after detection
-        self.flow_stats[flow_key] = defaultdict(lambda: {
+        self.flow_stats[flow_key] = {
             'start_time': time.time(),
             'end_time': None,
             'fwd_packets': 0,
@@ -513,7 +511,7 @@ class NetworkAnomalyDetector:
             'min_seg_size_forward': float('inf'),
             'active': False,
             'fwd_data_packets': 0,
-        })
+        }
     
     def cleanup_old_flows(self):
         """Remove flows that have been inactive for too long"""
