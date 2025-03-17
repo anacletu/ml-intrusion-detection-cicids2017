@@ -11,6 +11,11 @@ venv/
 *.log  
 logs/  
 
+# Large files
+*.pcap
+ml_models/*.joblib
+datasets/*.csv
+
 # Ignore test results
 nids_test_results/
 nids_alerts/
