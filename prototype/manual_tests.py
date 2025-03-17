@@ -1,7 +1,7 @@
 import subprocess
 import time
 import datetime
-import json
+import csv
 import os
 import argparse
 import logging
@@ -24,7 +24,17 @@ class SimpleAttackTester:
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.delay_between_tests = delay_between_tests
-        self.results = {}
+        self.results = []
+        
+        # Initialize the CSV file
+        self.csv_file = self.output_dir / "nids_test_results.csv"
+        with open(self.csv_file, 'w', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow([
+                'timestamp', 'test_id', 'attack_type', 'description', 
+                'command', 'start_time', 'end_time', 'duration_seconds', 
+                'success', 'return_code', 'error'
+            ])
         
     def run_command(self, attack_type, command_args, description):
         """Run a command and log the results"""
@@ -54,6 +64,7 @@ class SimpleAttackTester:
             duration_seconds = (end_time - start_time).total_seconds()
             
             result = {
+                "timestamp": datetime.datetime.now().isoformat(),
                 "test_id": test_id,
                 "attack_type": attack_type,
                 "description": description,
@@ -61,19 +72,18 @@ class SimpleAttackTester:
                 "start_time": start_time_iso,
                 "end_time": end_time_iso,
                 "duration_seconds": duration_seconds,
-                "stdout": proc.stdout,
-                "stderr": proc.stderr,
-                "returncode": proc.returncode,
-                "success": proc.returncode == 0
+                "success": proc.returncode == 0,
+                "return_code": proc.returncode,
+                "error": ""
             }
             
             logging.info(f"Attack completed: {attack_type} (Success: {result['success']})")
-            return result
             
         except subprocess.TimeoutExpired:
             end_time = datetime.datetime.now()
             logging.warning(f"Attack timed out: {attack_type}")
-            return {
+            result = {
+                "timestamp": datetime.datetime.now().isoformat(),
                 "test_id": test_id,
                 "attack_type": attack_type,
                 "description": description,
@@ -81,13 +91,16 @@ class SimpleAttackTester:
                 "start_time": start_time_iso,
                 "end_time": end_time.isoformat(),
                 "duration_seconds": 300,  # timeout value
-                "error": "Command timed out after 5 minutes",
-                "success": False
+                "success": False,
+                "return_code": -1,
+                "error": "Command timed out after 5 minutes"
             }
+            
         except Exception as e:
             end_time = datetime.datetime.now()
             logging.error(f"Attack error for {attack_type}: {str(e)}")
-            return {
+            result = {
+                "timestamp": datetime.datetime.now().isoformat(),
                 "test_id": test_id,
                 "attack_type": attack_type,
                 "description": description,
@@ -95,14 +108,40 @@ class SimpleAttackTester:
                 "start_time": start_time_iso,
                 "end_time": end_time.isoformat(),
                 "duration_seconds": (end_time - start_time).total_seconds(),
-                "error": str(e),
-                "success": False
+                "success": False,
+                "return_code": -1,
+                "error": str(e)
             }
+            
         finally:
             # Clean up environment variables
             for var in ["ATTACK_TYPE", "ATTACK_START_TIME", "ATOMIC_RED_TEAM_TEST"]:
                 if var in os.environ:
                     del os.environ[var]
+            
+            # Write to CSV
+            self._write_result_to_csv(result)
+            self.results.append(result)
+            
+            return result
+    
+    def _write_result_to_csv(self, result):
+        """Write a single test result to the CSV file"""
+        with open(self.csv_file, 'a', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow([
+                result['timestamp'],
+                result['test_id'],
+                result['attack_type'],
+                result['description'],
+                result['command'],
+                result['start_time'],
+                result['end_time'],
+                result['duration_seconds'],
+                result['success'],
+                result['return_code'],
+                result['error']
+            ])
     
     def port_scanning_tests(self):
         """Run port scanning tests"""
@@ -215,10 +254,6 @@ class SimpleAttackTester:
         for category_name, test_func in test_categories:
             logging.info(f"Starting {category_name} tests")
             results = test_func()
-            self.results[category_name] = results
-            
-            # Save results for this category
-            self._save_results(category_name, results)
             
             # Wait between categories
             if category_name != test_categories[-1][0]:
@@ -226,7 +261,7 @@ class SimpleAttackTester:
                 logging.info(f"Waiting {wait_time} seconds before next category...")
                 time.sleep(wait_time)
         
-        self._save_final_report()
+        logging.info(f"All tests completed. Results saved to {self.csv_file}")
         return self.results
     
     def run_category(self, category):
@@ -242,42 +277,12 @@ class SimpleAttackTester:
         
         if category not in category_map:
             logging.error(f"Unknown category: {category}")
-            return {}
+            return []
         
         logging.info(f"Running tests for category: {category}")
         results = category_map[category]()
-        self.results[category] = results
-        
-        # Save results
-        self._save_results(category, results)
+        logging.info(f"Category tests completed. Results saved to {self.csv_file}")
         return results
-    
-    def _save_results(self, category, results):
-        """Save results for a category"""
-        output_file = self.output_dir / f"{category}_results.json"
-        with open(output_file, "w") as f:
-            json.dump(results, f, indent=4)
-        
-    def _save_final_report(self):
-        """Save the final report"""
-        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        report_file = self.output_dir / f"nids_test_report_{timestamp}.json"
-        
-        report = {
-            "timestamp": timestamp,
-            "target_ip": self.target_ip,
-            "total_tests": sum(len(tests) for tests in self.results.values()),
-            "successful_tests": sum(
-                sum(1 for test in tests if test.get("success", False))
-                for tests in self.results.values()
-            ),
-            "results_by_category": self.results
-        }
-        
-        with open(report_file, "w") as f:
-            json.dump(report, f, indent=4)
-        
-        logging.info(f"Final report saved to {report_file}")
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Simple NIDS Testing Framework")
