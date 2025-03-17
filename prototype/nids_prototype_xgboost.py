@@ -28,7 +28,7 @@ except:
 TIME_WINDOW = 30
 ACTIVITY_TIMEOUT = 2.0
 CLEANUP_INTERVAL = 60
-MODEL_PATH = '../ml_models/xgboost.joblib'
+MODEL_PATH = '../ml_models/supervised/xgboost.joblib'
 
 # Flow keys to whitelist (e.g., DHCP)
 WHITELISTED_FLOWS = {
@@ -377,7 +377,6 @@ class NetworkAnomalyDetector:
         
         # Flag counts
         features['PSH Flag Count'] = flow['psh_flags']
-        features['URG Flag Count'] = flow['urg_flags']
         features['FIN Flag Count'] = flow['fin_flags']
         features['ACK Flag Count'] = flow['ack_flags']
         
@@ -410,12 +409,6 @@ class NetworkAnomalyDetector:
         
         # Calculate Subflow statistics
         features['Subflow Fwd Bytes'] = flow['fwd_bytes']
-        
-        # Down/Up Ratio
-        if flow['fwd_bytes'] > 0:
-            features['Down/Up Ratio'] = flow['bwd_bytes'] / flow['fwd_bytes']
-        else:
-            features['Down/Up Ratio'] = 0
             
         return features
     
@@ -433,7 +426,7 @@ class NetworkAnomalyDetector:
         
         # Make sure all required features are present
         required_features = [
-            'Destination Port', 'Flow Duration', 'Total Fwd Packets', 'Total Length of Fwd Packets', 'Fwd Packet Length Max', 'Fwd Packet Length Min', 'Fwd Packet Length Mean', 'Fwd Packet Length Std', 'Bwd Packet Length Max', 'Bwd Packet Length Min', 'Bwd Packet Length Mean', 'Bwd Packet Length Std', 'Flow Bytes/s', 'Flow Packets/s', 'Flow IAT Mean', 'Flow IAT Std', 'Flow IAT Max', 'Flow IAT Min', 'Fwd IAT Total', 'Fwd IAT Mean', 'Fwd IAT Std', 'Fwd IAT Max', 'Fwd IAT Min', 'Bwd IAT Total', 'Bwd IAT Mean', 'Bwd IAT Std', 'Bwd IAT Max', 'Bwd IAT Min', 'Fwd Header Length', 'Bwd Header Length', 'Fwd Packets/s', 'Bwd Packets/s', 'Min Packet Length', 'Max Packet Length', 'Packet Length Mean', 'Packet Length Std', 'Packet Length Variance', 'FIN Flag Count', 'PSH Flag Count', 'ACK Flag Count', 'URG Flag Count', 'Down/Up Ratio', 'Average Packet Size', 'Subflow Fwd Bytes', 'Init_Win_bytes_forward', 'Init_Win_bytes_backward', 'act_data_pkt_fwd', 'min_seg_size_forward', 'Active Mean', 'Active Max', 'Active Min', 'Idle Mean', 'Idle Max', 'Idle Min'
+            'Destination Port', 'Flow Duration', 'Total Fwd Packets', 'Total Length of Fwd Packets', 'Fwd Packet Length Max', 'Fwd Packet Length Min', 'Fwd Packet Length Mean', 'Fwd Packet Length Std', 'Bwd Packet Length Max', 'Bwd Packet Length Min', 'Bwd Packet Length Mean', 'Bwd Packet Length Std', 'Flow Bytes/s', 'Flow Packets/s', 'Flow IAT Mean', 'Flow IAT Std', 'Flow IAT Max', 'Flow IAT Min', 'Fwd IAT Total', 'Fwd IAT Mean', 'Fwd IAT Std', 'Fwd IAT Max', 'Fwd IAT Min', 'Bwd IAT Total', 'Bwd IAT Mean', 'Bwd IAT Std', 'Bwd IAT Max', 'Bwd IAT Min', 'Fwd Header Length', 'Bwd Header Length', 'Fwd Packets/s', 'Bwd Packets/s', 'Min Packet Length', 'Max Packet Length', 'Packet Length Mean', 'Packet Length Std', 'Packet Length Variance', 'FIN Flag Count', 'PSH Flag Count', 'ACK Flag Count', 'Average Packet Size', 'Subflow Fwd Bytes', 'Init_Win_bytes_forward', 'Init_Win_bytes_backward', 'act_data_pkt_fwd', 'min_seg_size_forward', 'Active Mean', 'Active Max', 'Active Min', 'Idle Mean', 'Idle Max', 'Idle Min'
         ]
         
         # Add missing features with default values
