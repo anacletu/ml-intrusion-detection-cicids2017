@@ -14,6 +14,9 @@ logs/
 # Large files
 *.pcap
 ml_models/*.joblib
+ml_models/supervised/*.joblib
+ml_models/unsupervised/*.joblib
+ml_models/scalers/*.joblib
 datasets/*.csv
 
 # Ignore test results
