@@ -8,6 +8,7 @@ import threading
 import datetime
 import json
 import os
+import re
 import csv
 import netifaces
 
@@ -25,17 +26,16 @@ try:
 except:
     raise Exception("Could not determine the default interface. Please specify the interface manually.")
 
-TIME_WINDOW = 30
+TIME_WINDOW = 60
 ACTIVITY_TIMEOUT = 2.0
 CLEANUP_INTERVAL = 60
 MODEL_PATH = '../ml_models/supervised/xgboost.joblib'
 
-# Flow keys to whitelist (e.g., DHCP)
-WHITELISTED_FLOWS = {
-    "0.0.0.0:68-255.255.255.255:67-UDP",  # DHCP client to server
-    "192.168.0.1:67-255.255.255.255:68-UDP",  # DHCP server to client
-    # Add more as needed
-}
+# Flow keys to whitelist
+WHITELIST_PATTERNS = [
+    re.compile(r"^0\.0\.0\.0:68->255\.255\.255\.255:67-UDP$"),  # DHCP client to server
+    re.compile(r"^192\.168\.0\.1:67->255\.255\.255\.255:68-UDP$"),  # DHCP server to client
+]
 
 class NetworkAnomalyDetector:
     def __init__(self, model_path, threshold=0.7):
@@ -412,9 +412,15 @@ class NetworkAnomalyDetector:
             
         return features
     
+    def is_whitelisted(self, flow_key):
+        for pattern in WHITELIST_PATTERNS:
+            if pattern.match(flow_key):
+                return True
+        return False
+    
     def detect_anomalies(self, flow_key):
         """Detect anomalies in a flow using the XGBoost model"""
-        if flow_key in WHITELISTED_FLOWS:
+        if self.is_whitelisted(flow_key):
             return  # Skip whitelist flows
 
         features = self.extract_features(flow_key)
@@ -430,12 +436,8 @@ class NetworkAnomalyDetector:
         ]
         
         # Add missing features with default values
-        for feature in required_features:
-            if feature not in df.columns:
-                df[feature] = 0
-        
-        # Select only the features needed by the model in the right order
-        df = df[required_features]
+        # Add missing features with default values
+        df = df.reindex(columns=required_features, fill_value=0)
 
         # Define class names for readability (according to the what was defined during training)
         class_names = ['Normal Traffic', 'DoS', 'DDoS', 'Port Scanning', 'Brute Force', 'Web Attacks', 'Bots']

@@ -8,6 +8,7 @@ import threading
 import datetime
 import json
 import os
+import re
 import csv
 import netifaces
 
@@ -31,22 +32,33 @@ CLEANUP_INTERVAL = 60
 MODEL_PATH = '../ml_models/supervised/knn_model.joblib'
 SCALER_PATH = '../ml_models/scalars/robust_scalar_supervised'
 
-# Flow keys to whitelist (e.g., DHCP)
-WHITELISTED_FLOWS = {
-    "0.0.0.0:68-255.255.255.255:67-UDP",  # DHCP client to server
-    "192.168.0.1:67-255.255.255.255:68-UDP",  # DHCP server to client
-    # more as needed
-}
+# Flow keys to whitelist
+WHITELIST_PATTERNS = [
+    # Example: DHCP client to server
+    re.compile(r"^0\.0\.0\.0:68->255\.255\.255\.255:67-UDP$"),  # DHCP Client to Server
+    re.compile(r"^192\.168\.\d{1,3}\.\d{1,3}:\d+->255\.255\.255\.255:68-UDP$"),  # DHCP Server to Client
+    
+    # Example: MDNS multicast traffic (multicast IP: 224.0.0.251)
+    re.compile(r"^192\.168\.\d{1,3}\.\d{1,3}:\d+->224\.0\.0\.251:5353-UDP$"),  # Local MDNS
+    
+    # Example: Common local network patterns (with wildcards)
+    re.compile(r"^192\.168\.\d{1,3}\.\d{1,3}:\d+->\d+\.\d+\.\d+\.\d+:\d+-UDP$"),  # Local UDP
+    re.compile(r"^192\.168\.\d{1,3}\.\d{1,3}:\d+->\d+\.\d+\.\d+\.\d+:\d+-TCP$"),  # Local TCP
+    # You can add more patterns as needed...
+]
 
 class NetworkAnomalyDetector:
     def __init__(self, model_path, threshold=0.7):
-        # Load the pre-trained XGBoost model
+        # Load the pre-trained KNN model
         with open(model_path, 'rb') as f:
             self.model = joblib.load(f)
         self.capture_running = False
         
         # Detection threshold
         self.threshold = threshold
+
+        # Load the Robust Scaler
+        self.rb_scalar = joblib.load(SCALER_PATH)
         
         # Traffic statistics for feature extraction
         self.flow_stats = defaultdict(lambda: {
@@ -413,9 +425,15 @@ class NetworkAnomalyDetector:
             
         return features
     
+    def is_whitelisted(self, flow_key):
+        for pattern in WHITELIST_PATTERNS:
+            if pattern.match(flow_key):
+                return True
+        return False
+    
     def detect_anomalies(self, flow_key):
-        """Detect anomalies in a flow using the XGBoost model"""
-        if flow_key in WHITELISTED_FLOWS:
+        """Detect anomalies in a flow using the KNN model"""
+        if self.is_whitelisted(flow_key):
             return  # Skip whitelist flows
 
         features = self.extract_features(flow_key)
@@ -431,54 +449,18 @@ class NetworkAnomalyDetector:
         ]
         
         # Add missing features with default values
-        for feature in required_features:
-            if feature not in df.columns:
-                df[feature] = 0
-        
-        # Select only the features needed by the model in the right order
-        df = df[required_features]
+        df = df.reindex(columns=required_features, fill_value=0)
 
         # Applying Robust Scaler to the features as they were scaled during training
-        rb_scalar = joblib.load(SCALER_PATH)
-        df = rb_scalar.transform(df)
-
-        # Define class names for readability (according to the what was defined during training)
-        class_names = ['Normal Traffic', 'DoS', 'DDoS', 'Port Scanning', 'Brute Force', 'Web Attacks', 'Bots']
+        df = self.rb_scalar.transform(df)
         
         # Make prediction
         try:
-            if hasattr(self.model, 'predict_proba'):
-                probabilities = self.model.predict_proba(df)
-                # Get the predicted class index (highest probability)
-                predicted_class_idx = np.argmax(probabilities[0])
-                predicted_class = class_names[predicted_class_idx]
-                confidence_score = probabilities[0][predicted_class_idx]
-            
-            # Option 2: If the KNN model doesn't return probabilities
-            else:
-                # Get the predicted class
-                predicted_class_idx = self.model.predict(df)[0]
-                predicted_class = class_names[predicted_class_idx]
-                
-                # For KNN without probabilities, we can estimate confidence based on neighbors
-                if hasattr(self.model, 'kneighbors'):
-                    # Get distances and indices of nearest neighbors
-                    distances, indices = self.model.kneighbors(df)
-                    
-                    # Get the classes of the nearest neighbors
-                    nearest_neighbor_classes = [self.model.classes_[i] for i in indices[0]]
-                    
-                    # Count how many neighbors agree with the prediction
-                    matching_neighbors = sum(1 for c in nearest_neighbor_classes if c == predicted_class_idx)
-                    
-                    # Calculate confidence as the fraction of agreeing neighbors
-                    confidence_score = matching_neighbors / len(nearest_neighbor_classes)
-                else:
-                    # Fallback if kneighbors method is not available
-                    confidence_score = 1.0 if predicted_class != 'Normal Traffic' else 0.0
+            # Get the predicted class
+            predicted_class = self.model.predict(df)[0]
             
             # Check if the prediction is anything other than Normal Traffic and above the threshold
-            if predicted_class != 'Normal Traffic' and confidence_score >= self.threshold:
+            if predicted_class != 'Normal Traffic':
                 ip_src, port_src = flow_key.split('-')[0].split(':')
                 ip_dst, port_dst = flow_key.split('-')[1].split(':')
                 protocol = flow_key.split('-')[2] if len(flow_key.split('-')) > 2 else "Unknown"
@@ -486,12 +468,11 @@ class NetworkAnomalyDetector:
                 alert = {
                     'flow': flow_key,
                     'attack_type': predicted_class,
-                    'confidence': float(confidence_score),
                     'timestamp': datetime.datetime.now().isoformat(),
                     'src': f"{ip_src}:{port_src}",
                     'dst': f"{ip_dst}:{port_dst}",
                     'protocol': protocol,
-                    'details': f"{predicted_class} detected in flow {ip_src}:{port_src} -> {ip_dst}:{port_dst} [{protocol}] with confidence {confidence_score:.4f}"
+                    'details': f"{predicted_class} detected in flow {ip_src}:{port_src} -> {ip_dst}:{port_dst} [{protocol}]"
                 }
                 self.alerts.append(alert)
                 
@@ -765,7 +746,7 @@ class NetworkAnomalyGUI:
         self.root.mainloop()
 
 def main():
-    # Path to the pre-trained XGBoost model
+    # Path to the pre-trained KNN model
     model_path = MODEL_PATH
     
     # Create detector and GUI
