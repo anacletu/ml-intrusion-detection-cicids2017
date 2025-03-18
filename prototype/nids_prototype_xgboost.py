@@ -28,7 +28,7 @@ except:
 
 TIME_WINDOW = 60
 ACTIVITY_TIMEOUT = 2.0
-CLEANUP_INTERVAL = 60
+CLEANUP_INTERVAL = 120
 MODEL_PATH = '../ml_models/supervised/xgboost.joblib'
 
 # Flow keys to whitelist

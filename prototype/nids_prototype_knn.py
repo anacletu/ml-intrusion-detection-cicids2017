@@ -30,7 +30,7 @@ TIME_WINDOW = 30
 ACTIVITY_TIMEOUT = 2.0
 CLEANUP_INTERVAL = 60
 MODEL_PATH = '../ml_models/supervised/knn_model.joblib'
-SCALER_PATH = '../ml_models/scalars/robust_scalar_supervised'
+SCALAR_PATH = '../ml_models/scalars/robust_scalar_supervised'
 
 # Flow keys to whitelist
 WHITELIST_PATTERNS = [
@@ -58,7 +58,8 @@ class NetworkAnomalyDetector:
         self.threshold = threshold
 
         # Load the Robust Scaler
-        self.rb_scalar = joblib.load(SCALER_PATH)
+        with open(SCALAR_PATH, 'rb') as f:
+            self.rb_scalar = joblib.load(f)
         
         # Traffic statistics for feature extraction
         self.flow_stats = defaultdict(lambda: {
