@@ -42,14 +42,11 @@ WHITELIST_PATTERNS = [
 ]
 
 class NetworkAnomalyDetector:
-    def __init__(self, model_path, threshold=0.7):
+    def __init__(self, model_path):
         # Load the pre-trained KNN model
         with open(model_path, 'rb') as f:
             self.model = joblib.load(f)
         self.capture_running = False
-        
-        # Detection threshold
-        self.threshold = threshold
 
         # Load the Robust Scaler
         with open(SCALAR_PATH, 'rb') as f:
@@ -454,7 +451,7 @@ class NetworkAnomalyDetector:
             # Get the predicted class
             predicted_class = self.model.predict(df)[0]
             
-            # Check if the prediction is anything other than Normal Traffic and above the threshold
+            # Check if the prediction is anything other than Normal Traffic
             if predicted_class != 'Normal Traffic':
                 ip_src, port_src = flow_key.split('-')[0].split(':')
                 ip_dst, port_dst = flow_key.split('-')[1].split(':')
@@ -589,12 +586,6 @@ class NetworkAnomalyGUI:
         filter_entry = tk.Entry(control_frame, textvariable=self.filter_var, width=20)
         filter_entry.pack(side=tk.LEFT, padx=5)
         
-        # Threshold
-        tk.Label(control_frame, text="Threshold:").pack(side=tk.LEFT, padx=5)
-        self.threshold_var = tk.DoubleVar(value=0.7)
-        threshold_entry = tk.Entry(control_frame, textvariable=self.threshold_var, width=5)
-        threshold_entry.pack(side=tk.LEFT, padx=5)
-        
         # Start/Stop button
         self.running = False
         self.start_stop_btn = tk.Button(control_frame, text="Start", command=self.toggle_capture)
@@ -630,9 +621,6 @@ class NetworkAnomalyGUI:
     
     def toggle_capture(self):
         if not self.running:
-            # Update threshold
-            self.detector.threshold = self.threshold_var.get()
-            
             # Start capture
             interface = self.interface_var.get() if self.interface_var.get() else None
             filter_str = self.filter_var.get() if self.filter_var.get() else None
