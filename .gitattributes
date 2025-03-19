@@ -3,8 +3,3 @@
 *.csv filter=lfs diff=lfs merge=lfs -text
 *.model filter=lfs diff=lfs merge=lfs -text
 *.joblib filter=lfs diff=lfs merge=lfs -text
-
-# Specific directories
-ml_models/** filter=lfs diff=lfs merge=lfs -text
-datasets/** filter=lfs diff=lfs merge=lfs -text
-logs/large_logs/** filter=lfs diff=lfs merge=lfs -text
