@@ -26,9 +26,8 @@ After downloading the models from Kaggle:
 
 ```Python
 prototype/nids_prototype_xgboost.py # For XGBoost
-python prototype/nids_prototype_rf.py # For Random Forest
-python prototype/nids_prototype_Knn.py # For KNN
-
+prototype/nids_prototype_rf.py # For Random Forest
+prototype/nids_prototype_knn.py # For KNN
 ```
 
 ## Model Performance
