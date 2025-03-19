@@ -13,6 +13,7 @@ logs/
 
 # Large files
 *.pcap
+pcaps/*.pcap
 ml_models/*.joblib
 ml_models/supervised/*.joblib
 ml_models/unsupervised/*.joblib
