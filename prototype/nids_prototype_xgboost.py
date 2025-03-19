@@ -33,8 +33,11 @@ MODEL_PATH = '../ml_models/supervised/xgboost.joblib'
 
 # Flow keys to whitelist
 WHITELIST_PATTERNS = [
-    re.compile(r"^0\.0\.0\.0:68->255\.255\.255\.255:67-UDP$"),  # DHCP client to server
-    re.compile(r"^192\.168\.0\.1:67->255\.255\.255\.255:68-UDP$"),  # DHCP server to client
+    re.compile(r"^0\.0\.0\.0:68->255\.255\.255\.255:67-UDP$"),  # DHCP Client to Server
+    re.compile(r"^192\.168\.\d{1,3}\.\d{1,3}:\d+->255\.255\.255\.255:68-UDP$"),  # DHCP Server to Client
+    re.compile(r"^192\.168\.\d{1,3}\.\d{1,3}:\d+->224\.0\.0\.251:5353-UDP$"),  # Local MDNS
+    re.compile(r"^192\.168\.\d{1,3}\.\d{1,3}:\d+->\d+\.\d+\.\d+\.\d+:\d+-UDP$"),  # Local UDP
+    re.compile(r"^192\.168\.\d{1,3}\.\d{1,3}:\d+->\d+\.\d+\.\d+\.\d+:\d+-TCP$"),  # Local TCP
 ]
 
 class NetworkAnomalyDetector:
@@ -436,7 +439,6 @@ class NetworkAnomalyDetector:
         ]
         
         # Add missing features with default values
-        # Add missing features with default values
         df = df.reindex(columns=required_features, fill_value=0)
 
         # Define class names for readability (according to the what was defined during training)
@@ -445,11 +447,11 @@ class NetworkAnomalyDetector:
         # Make prediction
         try:
             # Predict anomaly
-            probabilities = self.model.predict_proba(df)
-            
-            # Get the predicted class index (highest probability)
-            predicted_class_idx = np.argmax(probabilities[0])
+            predicted_class_idx = self.model.predict(df)[0]
             predicted_class = class_names[predicted_class_idx]
+            
+            # Get the predicted class probabilities
+            probabilities = self.model.predict_proba(df)
             confidence_score = probabilities[0][predicted_class_idx]
             
             # Check if the prediction is anything other than Normal Traffic and above the threshold
@@ -462,7 +464,7 @@ class NetworkAnomalyDetector:
                     'flow': flow_key,
                     'attack_type': predicted_class,
                     'confidence': float(confidence_score),
-                    'timestamp': datetime.datetime.now().isoformat(),  # ISO 8601 format
+                    'timestamp': datetime.datetime.now().isoformat(),
                     'src': f"{ip_src}:{port_src}",
                     'dst': f"{ip_dst}:{port_dst}",
                     'protocol': protocol,

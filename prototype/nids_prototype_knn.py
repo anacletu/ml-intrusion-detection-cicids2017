@@ -26,25 +26,19 @@ try:
 except:
     raise Exception("Could not determine the default interface. Please specify the interface manually.")
 
-TIME_WINDOW = 30
+TIME_WINDOW = 60
 ACTIVITY_TIMEOUT = 2.0
-CLEANUP_INTERVAL = 60
+CLEANUP_INTERVAL = 120
 MODEL_PATH = '../ml_models/supervised/knn_model.joblib'
 SCALAR_PATH = '../ml_models/scalars/robust_scalar_supervised'
 
 # Flow keys to whitelist
 WHITELIST_PATTERNS = [
-    # Example: DHCP client to server
     re.compile(r"^0\.0\.0\.0:68->255\.255\.255\.255:67-UDP$"),  # DHCP Client to Server
     re.compile(r"^192\.168\.\d{1,3}\.\d{1,3}:\d+->255\.255\.255\.255:68-UDP$"),  # DHCP Server to Client
-    
-    # Example: MDNS multicast traffic (multicast IP: 224.0.0.251)
     re.compile(r"^192\.168\.\d{1,3}\.\d{1,3}:\d+->224\.0\.0\.251:5353-UDP$"),  # Local MDNS
-    
-    # Example: Common local network patterns (with wildcards)
     re.compile(r"^192\.168\.\d{1,3}\.\d{1,3}:\d+->\d+\.\d+\.\d+\.\d+:\d+-UDP$"),  # Local UDP
     re.compile(r"^192\.168\.\d{1,3}\.\d{1,3}:\d+->\d+\.\d+\.\d+\.\d+:\d+-TCP$"),  # Local TCP
-    # You can add more patterns as needed...
 ]
 
 class NetworkAnomalyDetector:
