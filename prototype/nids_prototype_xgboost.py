@@ -26,8 +26,8 @@ try:
 except:
     raise Exception("Could not determine the default interface. Please specify the interface manually.")
 
-TIME_WINDOW = 5
-ACTIVITY_TIMEOUT = 2.0
+TIME_WINDOW = 60
+ACTIVITY_TIMEOUT = 5
 CLEANUP_INTERVAL = 120
 MODEL_PATH = '../ml_models/supervised/xgboost.joblib'
 
