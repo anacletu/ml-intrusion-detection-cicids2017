@@ -26,7 +26,7 @@ try:
 except:
     raise Exception("Could not determine the default interface. Please specify the interface manually.")
 
-TIME_WINDOW = 60
+TIME_WINDOW = 5
 ACTIVITY_TIMEOUT = 2.0
 CLEANUP_INTERVAL = 120
 MODEL_PATH = '../ml_models/supervised/xgboost.joblib'
@@ -54,6 +54,7 @@ class NetworkAnomalyDetector:
         self.flow_stats = defaultdict(lambda: {
             'start_time': None,
             'end_time': None,
+            'last_detection_time': None,
             'fwd_packets': 0,
             'bwd_packets': 0,
             'fwd_bytes': 0,
@@ -142,6 +143,7 @@ class NetworkAnomalyDetector:
             dst_port = packet[UDP].dport
             header_length = len(packet[UDP])
             window_size = 0
+        
         else:
             # Skip non-TCP/UDP packets
             return
@@ -265,8 +267,17 @@ class NetworkAnomalyDetector:
                 flow['bwd_iat'].append(current_time - flow['last_bwd_packet_time'])
             flow['last_bwd_packet_time'] = current_time
         
-        # Check if it's time to perform detection
-        if current_time - flow['start_time'] >= self.time_window:
+        # Check if it is time to detect anomalies
+        if flow['last_detection_time'] is None \
+            and current_time - flow['start_time'] >= self.time_window \
+            and flow['fwd_packets'] + flow['bwd_packets'] >= 3:
+            # First detection after time window
+            self.detect_anomalies(flow_key)
+        
+        elif flow['last_detection_time'] is not None \
+            and current_time - flow['last_detection_time'] >= self.time_window \
+            and flow['fwd_packets'] + flow['bwd_packets'] >= 3:
+            # Subsequent detections based on last detection time
             self.detect_anomalies(flow_key)
         
         # Periodically clean up old flows
@@ -434,12 +445,15 @@ class NetworkAnomalyDetector:
         df = pd.DataFrame([features])
         
         # Make sure all required features are present
-        required_features = [
-            'Destination Port', 'Flow Duration', 'Total Fwd Packets', 'Total Length of Fwd Packets', 'Fwd Packet Length Max', 'Fwd Packet Length Min', 'Fwd Packet Length Mean', 'Fwd Packet Length Std', 'Bwd Packet Length Max', 'Bwd Packet Length Min', 'Bwd Packet Length Mean', 'Bwd Packet Length Std', 'Flow Bytes/s', 'Flow Packets/s', 'Flow IAT Mean', 'Flow IAT Std', 'Flow IAT Max', 'Flow IAT Min', 'Fwd IAT Total', 'Fwd IAT Mean', 'Fwd IAT Std', 'Fwd IAT Max', 'Fwd IAT Min', 'Bwd IAT Total', 'Bwd IAT Mean', 'Bwd IAT Std', 'Bwd IAT Max', 'Bwd IAT Min', 'Fwd Header Length', 'Bwd Header Length', 'Fwd Packets/s', 'Bwd Packets/s', 'Min Packet Length', 'Max Packet Length', 'Packet Length Mean', 'Packet Length Std', 'Packet Length Variance', 'FIN Flag Count', 'PSH Flag Count', 'ACK Flag Count', 'Average Packet Size', 'Subflow Fwd Bytes', 'Init_Win_bytes_forward', 'Init_Win_bytes_backward', 'act_data_pkt_fwd', 'min_seg_size_forward', 'Active Mean', 'Active Max', 'Active Min', 'Idle Mean', 'Idle Max', 'Idle Min'
-        ]
-        
+        model_features = self.model.get_booster().feature_names
+        if not model_features:
+            print("Using hardcoded feature list!")
+            model_features = [
+                'Destination Port', 'Flow Duration', 'Total Fwd Packets', 'Total Length of Fwd Packets', 'Fwd Packet Length Max', 'Fwd Packet Length Min', 'Fwd Packet Length Mean', 'Fwd Packet Length Std', 'Bwd Packet Length Max', 'Bwd Packet Length Min', 'Bwd Packet Length Mean', 'Bwd Packet Length Std', 'Flow Bytes/s', 'Flow Packets/s', 'Flow IAT Mean', 'Flow IAT Std', 'Flow IAT Max', 'Flow IAT Min', 'Fwd IAT Total', 'Fwd IAT Mean', 'Fwd IAT Std', 'Fwd IAT Max', 'Fwd IAT Min', 'Bwd IAT Total', 'Bwd IAT Mean', 'Bwd IAT Std', 'Bwd IAT Max', 'Bwd IAT Min', 'Fwd Header Length', 'Bwd Header Length', 'Fwd Packets/s', 'Bwd Packets/s', 'Min Packet Length', 'Max Packet Length', 'Packet Length Mean', 'Packet Length Std', 'Packet Length Variance', 'FIN Flag Count', 'PSH Flag Count', 'ACK Flag Count', 'Average Packet Size', 'Subflow Fwd Bytes', 'Init_Win_bytes_forward', 'Init_Win_bytes_backward', 'act_data_pkt_fwd', 'min_seg_size_forward', 'Active Mean', 'Active Max', 'Active Min', 'Idle Mean', 'Idle Max', 'Idle Min'
+            ]
+               
         # Add missing features with default values
-        df = df.reindex(columns=required_features, fill_value=0)
+        df = df.reindex(columns=model_features, fill_value=0)
 
         # Define class names for readability (according to the what was defined during training)
         class_names = ['Normal Traffic', 'DoS', 'DDoS', 'Port Scanning', 'Brute Force', 'Web Attacks', 'Bots']
@@ -454,6 +468,13 @@ class NetworkAnomalyDetector:
             probabilities = self.model.predict_proba(df)
             confidence_score = probabilities[0][predicted_class_idx]
             
+            # Debug logs
+            current_time = time.time()
+            print(f"Current time: {datetime.datetime.fromtimestamp(current_time)}")
+            print(f"Flow key: {flow_key}")
+            print(f"Predicted class: {predicted_class} ({confidence_score:.4f})")
+            print()
+
             # Check if the prediction is anything other than Normal Traffic and above the threshold
             if predicted_class != 'Normal Traffic' and confidence_score >= self.threshold:
                 ip_src, port_src = flow_key.split('-')[0].split(':')
@@ -479,46 +500,49 @@ class NetworkAnomalyDetector:
         except Exception as e:
             print(f"Error in anomaly detection: {e}")
         
-        # Reset flow statistics after detection
-        self.flow_stats[flow_key] = {
-            'start_time': time.time(),
-            'end_time': None,
-            'fwd_packets': 0,
-            'bwd_packets': 0,
-            'fwd_bytes': 0,
-            'bwd_bytes': 0,
-            'fwd_packet_sizes': deque(maxlen=100),
-            'bwd_packet_sizes': deque(maxlen=100),
-            'packet_sizes': deque(maxlen=100),
-            'fwd_iat': deque(maxlen=100),
-            'bwd_iat': deque(maxlen=100),
-            'flow_iat': deque(maxlen=100),
-            'fwd_psh_flags': 0,
-            'fwd_urg_flags': 0,
-            'fin_flags': 0,
-            'syn_flags': 0,
-            'rst_flags': 0,
-            'psh_flags': 0,
-            'ack_flags': 0,
-            'urg_flags': 0,
-            'ece_flags': 0,
-            'fwd_header_bytes': 0,
-            'bwd_header_bytes': 0,
-            'fwd_win_bytes': None,
-            'bwd_win_bytes': None,
-            'active_times': deque(maxlen=100),
-            'idle_times': deque(maxlen=100),
-            'last_active_time': None,
-            'last_idle_time': None,
-            'active_start': None,
-            'idle_start': None,
-            'last_packet_time': None,
-            'last_fwd_packet_time': None,
-            'last_bwd_packet_time': None,
-            'min_seg_size_forward': float('inf'),
-            'active': False,
-            'fwd_data_packets': 0,
-        }
+        # Update detection time
+        self.flow_stats[flow_key]['last_detection_time'] = time.time()
+
+        # Keep the connection context but reset counters
+        flow = self.flow_stats[flow_key]
+
+        # Reset packet and byte counters
+        flow['fwd_packets'] = 0
+        flow['bwd_packets'] = 0
+        flow['fwd_bytes'] = 0 
+        flow['bwd_bytes'] = 0
+        flow['fwd_header_bytes'] = 0    
+        flow['bwd_header_bytes'] = 0    
+        
+        # Reset window size
+        flow['fwd_win_bytes'] = None 
+        flow['bwd_win_bytes'] = None    
+
+        # Reset flag counters
+        flow['fwd_psh_flags'] = 0
+        flow['fwd_urg_flags'] = 0
+        flow['fin_flags'] = 0
+        flow['syn_flags'] = 0
+        flow['rst_flags'] = 0
+        flow['psh_flags'] = 0
+        flow['ack_flags'] = 0
+        flow['urg_flags'] = 0
+        flow['ece_flags'] = 0
+
+        # Clear packet timing queues but maintain connection
+        flow['fwd_packet_sizes'].clear()
+        flow['bwd_packet_sizes'].clear() 
+        flow['packet_sizes'].clear()
+        flow['fwd_iat'].clear()
+        flow['bwd_iat'].clear()
+        flow['flow_iat'].clear()
+        flow['active_times'].clear()
+        flow['idle_times'].clear()
+        flow['min_seg_size_forward'] = float('inf')
+
+        # Reset data packet count and active status
+        flow['fwd_data_packets'] = 0
+        flow['active'] = False 
     
     def cleanup_old_flows(self):
         """Remove flows that have been inactive for too long"""
@@ -526,10 +550,11 @@ class NetworkAnomalyDetector:
         to_remove = []
         
         for flow_key, flow in self.flow_stats.items():
-            if flow['last_packet_time'] is not None and current_time - flow['last_packet_time'] > self.cleanup_interval:
-                self.detect_anomalies(flow_key)
+            if flow['last_packet_time'] is not None and current_time - flow['last_packet_time'] > self.cleanup_interval:               
+                # Mark for removal since it's inactive
                 to_remove.append(flow_key)
         
+        # Remove inactive flows
         for flow_key in to_remove:
             del self.flow_stats[flow_key]
     
