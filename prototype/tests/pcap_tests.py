@@ -34,9 +34,12 @@ NIDS_CONFIGS = {
 }
 
 # List of PCAP files
+# Monday is excluded as it only contains benign traffic
 PCAP_FILES = [
     "../../pcaps/cicids2017/Friday-WorkingHours.pcap",
-    "../../pcaps/cicids2017/Thursday-WorkingHours.pcap",  
+    "../../pcaps/cicids2017/Thursday-WorkingHours.pcap",
+    "../../pcaps/cicids2017/Wednesday-workingHours.pcap",
+    "../../pcaps/cicids2017/Tuesday-WorkingHours.pcap",
 ]
 
 # Automatically get the default network interface
