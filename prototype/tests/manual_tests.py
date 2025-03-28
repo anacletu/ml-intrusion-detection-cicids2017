@@ -2,7 +2,6 @@ import subprocess
 import time
 import datetime
 import csv
-import os
 import argparse
 import logging
 import random
@@ -13,13 +12,13 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler("nids_test.log"),
+        logging.FileHandler("nids_manual_test.log"),
         logging.StreamHandler()
     ]
 )
 
 class SimpleAttackTester:
-    def __init__(self, target_ip, output_dir="nids_test_results", delay_between_tests=30):
+    def __init__(self, target_ip, output_dir="logs", delay_between_tests=30):
         self.target_ip = target_ip
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
@@ -27,7 +26,7 @@ class SimpleAttackTester:
         self.results = []
         
         # Initialize the CSV file
-        self.csv_file = self.output_dir / "nids_test_results.csv"
+        self.csv_file = self.output_dir / "manual_test_results.csv"
         with open(self.csv_file, 'w', newline='') as f:
             writer = csv.writer(f)
             writer.writerow([
@@ -41,11 +40,6 @@ class SimpleAttackTester:
         test_id = f"{attack_type}_{int(time.time())}"
         
         logging.info(f"Running {attack_type} attack: {description}")
-        
-        # Set environment variables for correlation
-        os.environ["ATTACK_TYPE"] = attack_type
-        os.environ["ATTACK_START_TIME"] = datetime.datetime.now().isoformat()
-        os.environ["ATOMIC_RED_TEAM_TEST"] = test_id
         
         try:
             start_time = datetime.datetime.now()
@@ -114,11 +108,6 @@ class SimpleAttackTester:
             }
             
         finally:
-            # Clean up environment variables
-            for var in ["ATTACK_TYPE", "ATTACK_START_TIME", "ATOMIC_RED_TEAM_TEST"]:
-                if var in os.environ:
-                    del os.environ[var]
-            
             # Write to CSV
             self._write_result_to_csv(result)
             self.results.append(result)
@@ -148,17 +137,17 @@ class SimpleAttackTester:
         results = []
         
         # Basic port scan
-        cmd = ["nmap", "-p", "1-1000", self.target_ip]
+        cmd = ["sudo" "nmap", "-p", "1-1000", self.target_ip]
         results.append(self.run_command("Port Scanning", cmd, "Basic port scan"))
         time.sleep(self.delay_between_tests)
         
         # Stealth scan
-        cmd = ["nmap", "-sS", "-p", "1-1000", self.target_ip]
+        cmd = ["sudo" "nmap", "-sS", "-p", "1-1000", self.target_ip]
         results.append(self.run_command("Port Scanning", cmd, "Stealth scan"))
         time.sleep(self.delay_between_tests)
         
         # Service version detection
-        cmd = ["nmap", "-sV", "-p", "22,80,443", self.target_ip]
+        cmd = ["sudo" "nmap", "-sV", "-p", "22,80,443", self.target_ip]
         results.append(self.run_command("Port Scanning", cmd, "Service version detection"))
         
         return results

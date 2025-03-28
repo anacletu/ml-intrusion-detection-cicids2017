@@ -1,0 +1,44 @@
+2025-03-28 10:01:45,863 - INFO - Using default network interface: en0
+2025-03-28 10:01:45,863 - INFO - Starting tests for PCAP: ../../pcaps/cicids2017/Friday-WorkingHours.pcap
+2025-03-28 10:01:45,863 - INFO - Starting test for knn NIDS
+2025-03-28 10:01:45,864 - INFO - Running knn NIDS: sudo python3 ../nids_prototype_knn.py
+2025-03-28 10:01:45,864 - INFO - Starting test for xgboost NIDS
+2025-03-28 10:01:45,866 - INFO - Running xgboost NIDS: sudo python3 ../nids_prototype_xgboost.py
+2025-03-28 10:01:45,866 - INFO - Running tcpreplay for ../../pcaps/cicids2017/Friday-WorkingHours.pcap
+2025-03-28 10:01:45,870 - ERROR - Resource monitoring error: (pid=63255)
+2025-03-28 10:01:45,871 - ERROR - Resource monitoring error: (pid=63256)
+2025-03-28 10:01:56,578 - INFO - xgboost NIDS execution completed
+2025-03-28 10:01:56,578 - INFO - knn NIDS execution completed
+2025-03-28 10:06:07,587 - INFO - Using default network interface: en0
+2025-03-28 10:06:07,587 - INFO - Starting tests for PCAP: ../../pcaps/cicids2017/Friday-WorkingHours.pcap
+2025-03-28 10:06:07,587 - INFO - Starting test for knn NIDS
+2025-03-28 10:06:07,587 - INFO - Running knn NIDS: sudo python3 ../nids_prototype_knn.py
+2025-03-28 10:06:07,588 - INFO - Starting test for xgboost NIDS
+2025-03-28 10:06:07,590 - INFO - Running xgboost NIDS: sudo python3 ../nids_prototype_xgboost.py
+2025-03-28 10:06:07,590 - INFO - Running tcpreplay for ../../pcaps/cicids2017/Friday-WorkingHours.pcap
+2025-03-28 10:06:07,594 - ERROR - Resource monitoring error: (pid=64392)
+2025-03-28 10:06:07,594 - ERROR - Resource monitoring error: (pid=64393)
+2025-03-28 10:06:08,824 - INFO - xgboost NIDS execution completed
+2025-03-28 10:06:32,339 - INFO - knn NIDS execution completed
+2025-03-28 10:07:11,562 - INFO - Using default network interface: en0
+2025-03-28 10:07:11,562 - INFO - Starting tests for PCAP: ../../pcaps/cicids2017/Friday-WorkingHours.pcap
+2025-03-28 10:07:11,562 - INFO - Starting test for knn NIDS
+2025-03-28 10:07:11,562 - INFO - Running knn NIDS: sudo python3 ../nids_prototype_knn.py
+2025-03-28 10:07:11,562 - INFO - Starting test for xgboost NIDS
+2025-03-28 10:07:11,565 - INFO - Running xgboost NIDS: sudo python3 ../nids_prototype_xgboost.py
+2025-03-28 10:07:11,565 - INFO - Running tcpreplay for ../../pcaps/cicids2017/Friday-WorkingHours.pcap
+2025-03-28 10:07:11,567 - ERROR - Resource monitoring error: (pid=64720)
+2025-03-28 10:07:11,571 - ERROR - Resource monitoring error: (pid=64721)
+2025-03-28 10:07:49,579 - INFO - knn NIDS execution completed
+2025-03-28 10:07:51,111 - INFO - xgboost NIDS execution completed
+2025-03-28 10:08:32,230 - INFO - Using default network interface: en0
+2025-03-28 10:08:32,230 - INFO - Starting tests for PCAP: ../../pcaps/cicids2017/Friday-WorkingHours.pcap
+2025-03-28 10:08:32,230 - INFO - Starting test for knn NIDS
+2025-03-28 10:08:32,230 - INFO - Running knn NIDS: sudo python3 ../nids_prototype_knn.py
+2025-03-28 10:08:32,230 - INFO - Starting test for xgboost NIDS
+2025-03-28 10:08:32,233 - INFO - Running xgboost NIDS: sudo python3 ../nids_prototype_xgboost.py
+2025-03-28 10:08:32,233 - INFO - Running tcpreplay for ../../pcaps/cicids2017/Friday-WorkingHours.pcap
+2025-03-28 10:08:32,236 - ERROR - Resource monitoring error: (pid=65141)
+2025-03-28 10:08:32,237 - ERROR - Resource monitoring error: (pid=65140)
+2025-03-28 10:08:36,888 - INFO - xgboost NIDS execution completed
+2025-03-28 10:08:36,896 - INFO - knn NIDS execution completed

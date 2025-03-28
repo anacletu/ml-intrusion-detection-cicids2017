@@ -6,7 +6,6 @@ import joblib
 import time
 import threading
 import datetime
-import json
 import os
 import re
 import csv
@@ -29,8 +28,10 @@ except:
 TIME_WINDOW = 60
 ACTIVITY_TIMEOUT = 5
 CLEANUP_INTERVAL = 120
-MODEL_PATH = '../ml_models/supervised/knn_model.joblib'
-SCALAR_PATH = '../ml_models/scalars/robust_scalar_supervised'
+
+nids_script_dir = os.path.dirname(os.path.abspath(__file__)) # Get the directory of the NIDS script
+MODEL_PATH = os.path.join(nids_script_dir,'../ml_models/supervised/knn_model.joblib')
+SCALAR_PATH = os.path.join(nids_script_dir,'../ml_models/scalars/robust_scalar_supervised')
 
 # Flow keys to whitelist
 WHITELIST_PATTERNS = [
@@ -662,65 +663,51 @@ class NetworkAnomalyGUI:
             self.add_log_message("Stopped capture")
     
     def add_alert(self, alert):
-        """Add an alert to the log and write to a JSON file."""
-        # Format timestamp for display
-        timestamp = alert.get('timestamp', datetime.datetime.now().isoformat())
-        
-        # Get the Atomic Red Team test ID if available
-        test_id = os.environ.get("ATOMIC_RED_TEAM_TEST", "unknown")
-        
-        # Add additional context to the alert
-        alert["test_id"] = test_id
-        alert["detection_time"] = datetime.datetime.now().isoformat()
-        
-        # Calculate detection latency if we have attack start time in env var
-        attack_start_time = os.environ.get("ATTACK_START_TIME")
-        if attack_start_time:
-            try:
-                start = datetime.datetime.fromisoformat(attack_start_time)
-                now = datetime.datetime.now()
-                alert["detection_latency_seconds"] = (now - start).total_seconds()
-            except (ValueError, TypeError):
-                alert["detection_latency_seconds"] = None
-        
-        # Format alert for display
-        alert_text = f"[{timestamp}] {alert['details']}\n"
-        self.alert_log.insert(tk.END, alert_text)
-        self.alert_log.see(tk.END)
-        
-        # Update alert count
-        self.alerts_var.set(str(len(self.detector.alerts)))
-
+        """Add an alert to the log."""
         # Ensure the alerts directory exists
         os.makedirs("nids_alerts", exist_ok=True)
         
-        # Use a daily log file for better organization
-        log_date = datetime.datetime.now().strftime("%Y-%m-%d")
-        log_file = os.path.join("nids_alerts", f"nids_alerts_{log_date}.jsonl")
+        # Use a single, comprehensive alert log file
+        csv_file = os.path.join("nids_alerts", "nids_alerts_knn.csv")
         
         try:
-            with open(log_file, "a") as f:  # "a" for append mode
-                json.dump(alert, f)
-                f.write("\n")  # Add newline for JSONL format
-        except Exception as e:
-            print(f"Error writing alert to JSON file: {e}")
-            
-        # Also log to a consolidated CSV for easier analysis
-        try:
-            csv_file = os.path.join("nids_alerts", "nids_alerts.csv")
+            # Check if CSV file exists to determine if we need headers
             csv_exists = os.path.exists(csv_file)
             
+            # Open file in append mode
             with open(csv_file, "a", newline='') as csvfile:
-                fieldnames = ["timestamp", "attack_type", "confidence", "src", "dst", 
-                            "protocol", "test_id", "detection_latency_seconds"]
+                # Define a consistent set of basic fields
+                fieldnames = [
+                    "timestamp", 
+                    "attack_type", 
+                    "source_ip", 
+                    "destination_ip", 
+                    "protocol", 
+                    "details"
+                ]
+                
+                # Create CSV writer
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames, extrasaction='ignore')
                 
+                # Write headers if file is new
                 if not csv_exists:
                     writer.writeheader()
                 
-                writer.writerow({k: alert.get(k) for k in fieldnames})
+                # Prepare alert data
+                alert_data = {
+                    "timestamp": datetime.datetime.now().isoformat(),
+                    "attack_type": alert.get('attack_type', 'Unknown'),
+                    "source_ip": alert.get('src', 'N/A'),
+                    "destination_ip": alert.get('dst', 'N/A'),
+                    "protocol": alert.get('protocol', 'Unknown'),
+                    "details": alert.get('details', 'No additional details')
+                }
+                
+                # Write the alert row
+                writer.writerow(alert_data)
+        
         except Exception as e:
-            print(f"Error writing to CSV file: {e}")
+            print(f"Error logging alert to CSV: {e}")
     
     def add_log_message(self, message):
         """Add a regular log message to the alert log"""
