@@ -137,17 +137,17 @@ class SimpleAttackTester:
         results = []
         
         # Basic port scan
-        cmd = ["sudo" "nmap", "-p", "1-1000", self.target_ip]
+        cmd = ["sudo", "nmap", "-p", "1-1000", self.target_ip]
         results.append(self.run_command("Port Scanning", cmd, "Basic port scan"))
         time.sleep(self.delay_between_tests)
         
         # Stealth scan
-        cmd = ["sudo" "nmap", "-sS", "-p", "1-1000", self.target_ip]
+        cmd = ["sudo", "nmap", "-sS", "-p", "1-1000", self.target_ip]
         results.append(self.run_command("Port Scanning", cmd, "Stealth scan"))
         time.sleep(self.delay_between_tests)
         
         # Service version detection
-        cmd = ["sudo" "nmap", "-sV", "-p", "22,80,443", self.target_ip]
+        cmd = ["sudo", "nmap", "-sV", "-p", "22,80,443", self.target_ip]
         results.append(self.run_command("Port Scanning", cmd, "Service version detection"))
         
         return results
