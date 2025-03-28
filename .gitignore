@@ -18,6 +18,7 @@ logs/
 # Ignore test results
 nids_test_results/
 nids_alerts/
+logs/
 
 # Ignore system files  
 .DS_Store  
