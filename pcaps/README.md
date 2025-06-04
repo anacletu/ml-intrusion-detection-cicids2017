@@ -25,11 +25,19 @@ The UNSW-NB15 dataset contains a hybrid of real modern normal activities and syn
 After downloading the PCAP files:
 
 1. Place them in this directory
-2. Use the test scripts in the `prototype` directory to analyze the files
-3. For testing with specific PCAP files, use:
+2. Install tcpreplay
+3. Start the NIDS Prototype
 
 ```Python
-prototype/nids_prototype_xgboost.py --pcap path/to/pcapfile.pcap
+cd ml-intrusion-detection-cicids2017/prototype
+sudo python nids_prototype_knn.py
+```
+
+4. Make sure the correct network interface is selected and run the prototype
+5. Replay PCAP Traffic using tcpreplay (example below)
+
+```bash
+sudo tcpreplay --intf1=eth0 ../pcaps/Tuesday-WorkingHours.pcap
 ```
 
 Note: Some of these PCAP files can be quite large (several GB). Ensure you have sufficient disk space before downloading.

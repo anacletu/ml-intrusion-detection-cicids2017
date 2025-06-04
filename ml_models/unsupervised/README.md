@@ -17,16 +17,7 @@ The Kaggle notebook includes the training and evaluation of several unsupervised
 
 ## Using the Models with the NIDS
 
-After downloading the models from Kaggle:
-
-1. Place the `.joblib` files in this directory
-2. Ensure the corresponding scaler files are placed in the `../scalars/` directory
-3. Run the appropriate NIDS prototype for your model:
-
-```Python
-prototype/nids_prototype_if.py # For Isolation Forest
-prototype/nids_prototype_kmeans.py # For K-means
-```
+You will need to adapt the code from e.g. nids_prototype_xgboost in order to run other models. Considering the performance results, I did not develop individual scripts for each model.
 
 ## Model Performance
 

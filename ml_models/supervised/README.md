@@ -26,9 +26,10 @@ After downloading the models from Kaggle:
 
 ```Python
 prototype/nids_prototype_xgboost.py # For XGBoost
-prototype/nids_prototype_rf.py # For Random Forest
 prototype/nids_prototype_knn.py # For KNN
 ```
+
+You will need to adapt the code from e.g. nids_prototype_xgboost in order to run other models (like RF). Considering the performance results, I did not develop individual scripts for each model.
 
 ## Model Performance
 
