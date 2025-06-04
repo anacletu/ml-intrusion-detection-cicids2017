@@ -28,7 +28,7 @@ The project was conducted in the following stages:
 
     - Comprehensive cleaning, transformation, and analysis of the CICIDS2017 dataset.
     - Steps included handling missing values, removing duplicates, feature engineering, class balancing (SMOTE and random undersampling), and feature scaling (RobustScaler).
-    - Detailed in the Jupyter Notebook: `notebooks/cicids2017-comprehensive-data-processing-for-ml.ipynb`.
+    - Detailed in the Jupyter Notebook: `cicids2017-comprehensive-data-processing-for-ml.ipynb`.
     - The preprocessed [dataset is available on Kaggle](https://www.kaggle.com/datasets/ericanacletoribeiro/cicids2017-cleaned-and-preprocessed).
 
 2.  **Machine Learning Model Training and Comparative Evaluation:**
@@ -37,12 +37,12 @@ The project was conducted in the following stages:
     - Performance was assessed using metrics such as accuracy, precision, recall, F1-score, and resource consumption (training time, CPU/memory usage).
     - Hyperparameter tuning was performed using `RandomizedSearchCV`.
     - Jupyter Notebooks:
-      - Supervised Models: `notebooks/cicids2017-ml-models-comparison-supervised.ipynb` ([Kaggle Version](https://www.kaggle.com/code/ericanacletoribeiro/cicids2017-ml-models-comparison-supervised))
-      - Unsupervised Models: `notebooks/cicids2017-ml-models-comparison-unsupervised.ipynb` ([Kaggle Version](https://www.kaggle.com/code/ericanacletoribeiro/cicids2017-ml-models-comparison-unsupervised))
+      - Supervised Models: `cicids2017-ml-models-comparison-supervised.ipynb` ([Kaggle Version](https://www.kaggle.com/code/ericanacletoribeiro/cicids2017-ml-models-comparison-supervised))
+      - Unsupervised Models: `cicids2017-ml-models-comparison-unsupervised.ipynb` ([Kaggle Version](https://www.kaggle.com/code/ericanacletoribeiro/cicids2017-ml-models-comparison-unsupervised))
 
 3.  **NIDS Prototype Development and Validation:**
     - Development of a functional NIDS prototype in Python, integrating the selected machine learning model (KNN) for its practical performance.
-    - The `prototype/nids_knn.py` script contains the `NetworkAnomalyDetector` class for packet processing and feature extraction, and the `NetworkAnomalyGUI` class for the user interface.
+    - The `prototype/nids_prototype_knn.py` script contains the `NetworkAnomalyDetector` class for packet processing and feature extraction, and the `NetworkAnomalyGUI` class for the user interface.
     - The prototype was validated on a Raspberry Pi 5 by replaying CICIDS2017 pcap files using `tcpreplay` to simulate network attacks (e.g., DoS, Port Scan, Botnet). This method allowed for direct comparison against known traffic patterns.
 
 <br>
@@ -114,6 +114,8 @@ The project was conducted in the following stages:
     ```bash
     pip install pandas numpy scikit-learn joblib scapy netifaces tk
     ```
+
+As soon as I have some time, I will add a requirements file with all the dependencies for easier reproduction.
 
 ### Running the NIDS Prototype (KNN-based)
 
